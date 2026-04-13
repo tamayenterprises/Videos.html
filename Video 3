@@ -1,0 +1,443 @@
+<style>
+/* ===== GALLERY ===== */
+.tamay-gallery{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
+  gap:40px;
+}
+.tamay-project{
+  width:100%;
+  position:relative; /* necesario para overlay móvil */
+}
+
+/* ===== VIDEO GRID ===== */
+.tamay-videos{ display:grid; gap:14px; }
+@media(min-width:768px){
+  .tamay-videos{ grid-template-columns:1fr 1fr; }
+  .tamay-videos .main{ grid-column:1/span 2; }
+}
+@media(max-width:767px){
+  .tamay-videos{ grid-template-columns:1fr; }
+}
+
+/* ===== VIDEO TILE ===== */
+.tamay-tile{
+  position:relative;
+  aspect-ratio:16/9;
+  background:#000;
+  border-radius:14px;
+  overflow:hidden;
+  cursor:pointer;
+  transform:translateZ(0);
+}
+.tamay-tile img{ width:100%; height:100%; object-fit:cover; display:block; }
+.tamay-overlay{
+  position:absolute; inset:0;
+  display:grid; place-items:center;
+  background:linear-gradient(to top,rgba(0,0,0,.45),rgba(0,0,0,.1));
+}
+.tamay-play{
+  width:64px; height:64px; background:#fff; border-radius:50%;
+  display:grid; place-items:center;
+  box-shadow:0 8px 20px rgba(0,0,0,.4);
+}
+.tamay-play:before{
+  content:"";
+  border-left:20px solid #111;
+  border-top:12px solid transparent;
+  border-bottom:12px solid transparent;
+  margin-left:4px;
+}
+@media(max-width:768px){
+  .tamay-play{ width:44px; height:44px; }
+  .tamay-play:before{
+    border-left:14px solid #111;
+    border-top:8px solid transparent;
+    border-bottom:8px solid transparent;
+  }
+}
+
+/* ===== PREMIUM DESCRIPTION ===== */
+.tamay-desc{
+  margin-top:22px;
+  padding:24px 26px;
+  border-radius:14px;
+  background:#ffffff;
+  border:1px solid #e6e6e6;
+  box-shadow:0 8px 20px rgba(0,0,0,.06);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
+  font-size:17px;
+  line-height:1.6;
+  color:#222;
+}
+
+/* ===== DESKTOP MODAL: FULLSCREEN (NO TOCAR) ===== */
+.tamay-modal{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.92);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+  padding:16px;
+  opacity:0;
+  transition:opacity .22s ease;
+}
+.tamay-modal.active{
+  display:flex;
+  opacity:1;
+}
+
+.tamay-modal-video{
+  width:96vw;
+  height:96vh;
+  background:#000;
+  border-radius:14px;
+  overflow:hidden;
+  display:flex;
+  transform:scale(.985);
+  transition:transform .22s ease;
+}
+.tamay-modal.active .tamay-modal-video{
+  transform:scale(1);
+}
+.tamay-modal-video iframe{ width:100%; height:100%; border:0; }
+
+.tamay-close{
+  position:fixed;
+  top:18px;
+  right:18px;
+  width:42px;
+  height:42px;
+  border-radius:999px;
+  background:rgba(0,0,0,.55);
+  color:#fff;
+  display:none;
+  place-items:center;
+  font-size:22px;
+  cursor:pointer;
+  z-index:10000;
+}
+.tamay-close.show{ display:grid; }
+
+/* Lock scroll cuando modal desktop está abierto */
+html.tamay-lock, body.tamay-lock{ overflow:hidden !important; }
+
+/* ===== MOBILE OVERLAY: SOLO SOBRE EL AREA DE VIDEOS (NO TOCAR) ===== */
+.tamay-mobile-overlay{
+  position:absolute;
+  left:0;
+  right:0;
+  background:rgba(0,0,0,.92);
+  z-index:50;
+  border-radius:14px;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:10px;
+  opacity:0;
+  transition:opacity .22s ease;
+}
+.tamay-mobile-overlay.active{
+  display:flex;
+  opacity:1;
+}
+
+.tamay-mobile-player{
+  width:100%;
+  max-width:980px;
+  aspect-ratio:16/9;
+  background:#000;
+  border-radius:12px;
+  overflow:hidden;
+  transform:scale(.985);
+  transition:transform .22s ease;
+}
+.tamay-mobile-overlay.active .tamay-mobile-player{
+  transform:scale(1);
+}
+.tamay-mobile-player iframe{ width:100%; height:100%; border:0; }
+
+.tamay-mobile-close{
+  position:absolute;
+  top:10px;
+  right:10px;
+  width:40px;
+  height:40px;
+  border-radius:999px;
+  background:rgba(0,0,0,.55);
+  color:#fff;
+  display:grid;
+  place-items:center;
+  font-size:22px;
+  cursor:pointer;
+  z-index:60;
+}
+
+/* ===== NEW: FLIP/EXPAND FROM THUMBNAIL (Apple-style) ===== */
+.tamay-ghost{
+  position:fixed;
+  z-index:20000;
+  border-radius:14px;
+  overflow:hidden;
+  background:#000;
+  box-shadow:0 18px 50px rgba(0,0,0,.45);
+  transform-origin:top left;
+  will-change:transform, width, height, top, left;
+  pointer-events:none;
+}
+.tamay-ghost img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+/* Respetar usuarios con "reduce motion" */
+@media (prefers-reduced-motion: reduce){
+  .tamay-modal, .tamay-modal-video,
+  .tamay-mobile-overlay, .tamay-mobile-player{
+    transition:none !important;
+  }
+}
+</style>
+
+<div class="tamay-gallery" id="tamay-gallery">
+  <div class="tamay-project"
+       data-videos="uDI5DCx2Fl4, X4SXVcduADY, 08Ks5xBkHNY"
+       data-desc=" Basement Transformation - Bridgeport, CT ">
+  </div>
+</div>
+
+<!-- DESKTOP MODAL -->
+<div class="tamay-modal" id="tamay-modal" aria-hidden="true">
+  <div class="tamay-modal-video" id="tamay-player"></div>
+</div>
+<div class="tamay-close" id="tamay-close">✕</div>
+
+<script>
+(function(){
+  const gallery = document.getElementById("tamay-gallery");
+  const modal   = document.getElementById("tamay-modal");
+  const player  = document.getElementById("tamay-player");
+  const closeBtn= document.getElementById("tamay-close");
+
+  function isMobile(){
+    return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+  }
+
+  function lockScroll(){
+    document.documentElement.classList.add("tamay-lock");
+    document.body.classList.add("tamay-lock");
+  }
+  function unlockScroll(){
+    document.documentElement.classList.remove("tamay-lock");
+    document.body.classList.remove("tamay-lock");
+  }
+
+  function thumb(id){
+    const img=document.createElement("img");
+    img.src="https://i.ytimg.com/vi/"+id+"/maxresdefault.jpg";
+    img.onerror=function(){
+      this.onerror=null;
+      this.src="https://i.ytimg.com/vi/"+id+"/hqdefault.jpg";
+    };
+    return img;
+  }
+
+  /* ===== Apple-style expand from thumbnail ===== */
+  function animateFromTileTo(targetRect, tileEl){
+    const imgEl = tileEl.querySelector("img");
+    if(!imgEl) return null;
+
+    const r = tileEl.getBoundingClientRect();
+
+    const ghost = document.createElement("div");
+    ghost.className = "tamay-ghost";
+    ghost.style.left = r.left + "px";
+    ghost.style.top  = r.top + "px";
+    ghost.style.width  = r.width + "px";
+    ghost.style.height = r.height + "px";
+
+    const ghostImg = document.createElement("img");
+    ghostImg.src = imgEl.currentSrc || imgEl.src;
+    ghost.appendChild(ghostImg);
+
+    document.body.appendChild(ghost);
+
+    // trigger transition
+    const dx = targetRect.left - r.left;
+    const dy = targetRect.top  - r.top;
+    const sx = targetRect.width / r.width;
+    const sy = targetRect.height / r.height;
+
+    ghost.animate([
+      { transform: "translate(0px,0px) scale(1,1)" },
+      { transform: `translate(${dx}px,${dy}px) scale(${sx},${sy})` }
+    ], {
+      duration: 260,
+      easing: "cubic-bezier(.2,.8,.2,1)",
+      fill: "forwards"
+    });
+
+    return ghost;
+  }
+
+  function removeGhost(ghost){
+    if(!ghost) return;
+    ghost.remove();
+  }
+
+  function openDesktopModal(id, tileEl){
+    // show modal first (opacity transition)
+    lockScroll();
+    modal.classList.add("active");
+    modal.setAttribute("aria-hidden","false");
+    closeBtn.classList.add("show");
+
+    // target rect = modal video box
+    const box = document.getElementById("tamay-player").parentElement; // .tamay-modal-video
+    const target = box.getBoundingClientRect();
+
+    const ghost = animateFromTileTo(target, tileEl);
+
+    // load iframe AFTER small delay so animation feels smooth
+    setTimeout(()=>{
+      player.innerHTML="";
+      const iframe=document.createElement("iframe");
+      iframe.allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+      iframe.allowFullscreen=true;
+      iframe.src="https://www.youtube-nocookie.com/embed/"+encodeURIComponent(id)+
+        "?autoplay=1&mute=1&playsinline=1&rel=0&vq=hd1080";
+      player.appendChild(iframe);
+
+      // remove ghost once loaded a bit
+      setTimeout(()=>removeGhost(ghost), 120);
+    }, 160);
+  }
+
+  function closeDesktopModal(){
+    modal.classList.remove("active");
+    modal.setAttribute("aria-hidden","true");
+    player.innerHTML="";
+    closeBtn.classList.remove("show");
+    unlockScroll();
+  }
+
+  closeBtn.addEventListener("click", closeDesktopModal);
+  modal.addEventListener("click", (e)=>{ if(e.target===modal) closeDesktopModal(); });
+
+  function ensureMobileOverlay(projectEl){
+    let overlay = projectEl.querySelector(".tamay-mobile-overlay");
+    if(overlay) return overlay;
+
+    overlay = document.createElement("div");
+    overlay.className = "tamay-mobile-overlay";
+
+    const close = document.createElement("div");
+    close.className = "tamay-mobile-close";
+    close.textContent = "✕";
+
+    const playerWrap = document.createElement("div");
+    playerWrap.className = "tamay-mobile-player";
+
+    overlay.appendChild(close);
+    overlay.appendChild(playerWrap);
+
+    close.addEventListener("click", ()=> {
+      overlay.classList.remove("active");
+      playerWrap.innerHTML="";
+    });
+
+    projectEl.appendChild(overlay);
+    return overlay;
+  }
+
+  function openMobileOverlay(projectEl, id, tileEl){
+    const videosEl = projectEl.querySelector(".tamay-videos");
+    if(!videosEl) return;
+
+    const overlay = ensureMobileOverlay(projectEl);
+    const playerWrap = overlay.querySelector(".tamay-mobile-player");
+
+    // cover only videos area (not description)
+    const top = videosEl.offsetTop;
+    const height = videosEl.offsetHeight;
+    overlay.style.top = top + "px";
+    overlay.style.height = height + "px";
+
+    // make it visible first so we can compute target rect
+    overlay.classList.add("active");
+
+    const target = playerWrap.getBoundingClientRect();
+    const ghost = animateFromTileTo(target, tileEl);
+
+    setTimeout(()=>{
+      playerWrap.innerHTML="";
+      const iframe=document.createElement("iframe");
+      iframe.allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+      iframe.allowFullscreen=true;
+      iframe.src="https://www.youtube-nocookie.com/embed/"+encodeURIComponent(id)+
+        "?autoplay=1&mute=1&playsinline=1&rel=0&vq=hd1080";
+      playerWrap.appendChild(iframe);
+      setTimeout(()=>removeGhost(ghost), 120);
+    }, 160);
+  }
+
+  // Render projects
+  gallery.querySelectorAll(".tamay-project").forEach(p=>{
+    const ids=(p.dataset.videos||"").split(",").map(x=>x.trim()).filter(Boolean);
+    const desc=p.dataset.desc||"";
+
+    const grid=document.createElement("div");
+    grid.className="tamay-videos";
+
+    ids.forEach((id,i)=>{
+      const slot=document.createElement("div");
+      if(i===0 && ids.length>=3) slot.className="main";
+
+      const tile=document.createElement("div");
+      tile.className="tamay-tile";
+
+      const img=thumb(id);
+      const overlay=document.createElement("div");
+      overlay.className="tamay-overlay";
+      const play=document.createElement("div");
+      play.className="tamay-play";
+
+      overlay.appendChild(play);
+      tile.appendChild(img);
+      tile.appendChild(overlay);
+
+      tile.addEventListener("click", ()=> {
+        if(isMobile()){
+          openMobileOverlay(p, id, tile);
+        } else {
+          openDesktopModal(id, tile);
+        }
+      });
+
+      slot.appendChild(tile);
+      grid.appendChild(slot);
+    });
+
+    p.appendChild(grid);
+
+    if(desc){
+      const d=document.createElement("div");
+      d.className="tamay-desc";
+      d.textContent=desc;
+      p.appendChild(d);
+    }
+  });
+
+  // Close mobile overlay on resize/rotate to avoid weird positions
+  window.addEventListener("resize", ()=> {
+    document.querySelectorAll(".tamay-mobile-overlay.active").forEach(o=>{
+      const wrap = o.querySelector(".tamay-mobile-player");
+      if(wrap) wrap.innerHTML="";
+      o.classList.remove("active");
+    });
+  });
+})();
+</script>
